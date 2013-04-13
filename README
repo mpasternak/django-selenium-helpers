@@ -1,0 +1,25 @@
+django-selenium-helpers is a small but powerful package, inspired by a `very interesting blog post <https://blogs.gnome.org/danni/2012/11/19/extending-selenium-with-jquery/>`_. It makes testing your `Django <http://djangoproject.com>`_-powered pages with `Selenium <http://seleniumhq.com>`_, that utilize `JQuery <http://jquery.com/>`_ a breeze by providing a set of powerful functions to use 
+
+django-autocomplete-light's purpose is to enable autocompletes quickly and
+properly in a django project: it is the fruit of **years of R&D**. It was
+designed for Django so that every part overridable or reusable independently.
+It is stable, tested, documented and fully supported: it tries to be a good
+neighbour in Django ecosystem.
+
+Code sample
+-----------
+
+.. code-block:: python
+
+  from selenium_helpers import SeleniumTestCase, wd
+  
+  class MyWebPage(wd()):
+	def 
+
+  class MyTestCase(SeleniumTestCase):
+
+
+License
+--------
+
+This package is released under the MIT License.
