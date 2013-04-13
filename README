@@ -20,7 +20,10 @@ Code sample
   class MyTestCase(SeleniumTestCase):
 	def setUp(self):
 		self.page = MyWebPage()
-		self.page.open("/"")
+		self.page.open("/")
+		
+	def tearDown(self):
+		self.page.quit()
 		
 	def test_click(self):
 		b = self.page.get_button()
