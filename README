@@ -14,9 +14,19 @@ Code sample
   from selenium_helpers import SeleniumTestCase, wd
   
   class MyWebPage(wd()):
-	def 
+	def get_button(self):
+		return self.find_element_by_jquery("#button")
 
   class MyTestCase(SeleniumTestCase):
+	def setUp(self):
+		self.page = MyWebPage()
+		self.page.open("/"")
+		
+	def test_click(self):
+		b = self.page.get_button()
+		b.click()
+		self.assertEquals(b.visible(), True)
+		
 
 
 License
