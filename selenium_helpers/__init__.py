@@ -143,9 +143,17 @@ class SeleniumTestCase(LiveServerTestCase):
     """
 
     url = None
+    pageClass = wd()
 
     def open(self, url):
         self.page.get("%s%s" % (self.live_server_url, url))
+
+    def get_page(self):
+        return self.pageClass()
+
+    def setUp(self):
+        self.page = self.get_page()
+        self.reload()
 
     def reload(self):
         self.open(self.url)
