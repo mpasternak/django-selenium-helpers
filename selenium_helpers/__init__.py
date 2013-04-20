@@ -142,6 +142,13 @@ class SeleniumTestCase(LiveServerTestCase):
     clients and logging in profiles.
     """
 
+    url = None
+
     def open(self, url):
         self.page.get("%s%s" % (self.live_server_url, url))
 
+    def reload(self):
+        self.open(self.url)
+
+    def tearDown(self):
+        self.page.quit()
