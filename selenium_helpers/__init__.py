@@ -82,6 +82,10 @@ class MyWebElement(WebElement):
             raise InvalidSelectorException(
                 "jQuery selector returned %i elements, expected 1" % len(elems))
 
+    def css(self, arg):
+        return self.parent.execute_script(
+            '''return $(arguments[0]).css('%s');''' % arg, self)
+
 
 class _MyWebDriver(object):
     def create_web_element(self, element_id):
