@@ -48,11 +48,19 @@ class MyWebElement(WebElement):
         return self.parent.execute_script(
             '''return $(arguments[0]).parent().get();''', self)[0]
 
-    def val(self):
+    def val(self, arg=None):
         """Same as $(elem).val()
         """
+        if arg is not None:
+            return self.parent.execute_script(
+                '''return $(arguments[0]).val(arguments[1]);''', self, arg)
+
         return self.parent.execute_script(
             '''return $(arguments[0]).val();''', self)
+
+    def change(self):
+        return self.parent.execute_script(
+            '''return $(arguments[0]).change();''', self)
 
     def find_elements_by_jquery(self, jq):
         """Same as $(elem).find(...)
