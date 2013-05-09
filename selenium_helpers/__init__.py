@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
+from django.core.urlresolvers import reverse
 
 from django.test import LiveServerTestCase
 
 from selenium import webdriver
-from selenium.common.exceptions import InvalidSelectorException
+from selenium.common.exceptions import InvalidSelectorException, NoSuchElementException
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -172,3 +173,19 @@ class SeleniumTestCase(LiveServerTestCase):
 
     def tearDown(self):
         self.page.quit()
+
+    def login_via_admin(self, username, password, then=None):
+        """Performs user authorisation via default Django admin interface."""
+        self.open(reverse('admin:index'))
+        self.page.find_element_by_id("id_username").send_keys(username)
+        self.page.find_element_by_id("id_password").send_keys(password)
+        self.page.find_element_by_css_selector('input[type="submit"]').click()
+
+        try:
+            self.page.find_element_by_id("content-related")
+        except NoSuchElementException:
+            self.page.quit()
+            raise Exception("Cannot login via admin")
+
+        if then:
+            self.open(then)
