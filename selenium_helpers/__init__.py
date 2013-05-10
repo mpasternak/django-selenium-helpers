@@ -2,6 +2,7 @@
 from django.core.urlresolvers import reverse
 
 from django.test import LiveServerTestCase
+from django.conf import settings
 
 from selenium import webdriver
 from selenium.common.exceptions import InvalidSelectorException, NoSuchElementException
@@ -157,6 +158,16 @@ class SeleniumTestCase(LiveServerTestCase):
 
     url = None
     pageClass = wd()
+
+
+    def __init__(self, *args, **kwargs):
+        super(SeleniumTestCase, self).__init__(*args, **kwargs)
+        #
+        # We want to see tracebacks from the live server, so, according to:
+        # http://stackoverflow.com/questions/14566757/django-why-i-cant-get-the-tracebacks-in-case-of-error-when-i-run-liveservert
+        #
+        if not settings.DEBUG:
+            settings.DEBUG = True
 
     def open(self, url):
         self.page.get("%s%s" % (self.live_server_url, url))
