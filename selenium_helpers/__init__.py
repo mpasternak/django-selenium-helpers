@@ -60,6 +60,12 @@ class MyWebElement(WebElement):
         return self.parent.execute_script(
             '''return $(arguments[0]).val();''', self)
 
+    def text(self):
+        """Same as $(elem).text()
+        """
+        return self.parent.execute_script(
+            '''return $(arguments[0]).val();''', self)
+
     def change(self):
         return self.parent.execute_script(
             '''return $(arguments[0]).change();''', self)
