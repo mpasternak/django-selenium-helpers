@@ -64,7 +64,7 @@ class MyWebElement(WebElement):
         """Same as $(elem).text()
         """
         return self.parent.execute_script(
-            '''return $(arguments[0]).val();''', self)
+            '''return $(arguments[0]).text();''', self)
 
     def change(self):
         return self.parent.execute_script(
