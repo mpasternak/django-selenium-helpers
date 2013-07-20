@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 from django.core.urlresolvers import reverse
+from django.conf import settings
 
 from django.test import LiveServerTestCase
 from django.conf import settings
@@ -9,8 +10,9 @@ from selenium.common.exceptions import InvalidSelectorException, NoSuchElementEx
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 
-WEB_DRIVER = webdriver.Firefox
-#WEB_DRIVER = webdriver.PhantomJS
+WEB_DRIVER = webdriver.Remote
+# WEB_DRIVER = webdriver.Firefox
+# WEB_DRIVER = webdriver.PhantomJS
 
 
 def MyWebDriver(base, **kwargs):
@@ -169,7 +171,12 @@ class SeleniumTestCase(LiveServerTestCase):
         self.page.get("%s%s" % (self.live_server_url, url))
 
     def get_page(self):
-        return self.pageClass()
+        if issubclass(self.pageClass, webdriver.Remote):
+            return self.pageClass(
+                desired_capabilities={'browserName': 'firefox'},
+                command_executor='http://%s/wd/hub' % getattr(settings,
+                    "SELENIUM_HOST", "127.0.0.1:4444"))
+        return self.pageClass
 
     def setUp(self):
         self.page = self.get_page()
