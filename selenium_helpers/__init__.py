@@ -10,9 +10,8 @@ from selenium.common.exceptions import InvalidSelectorException, NoSuchElementEx
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 
-WEB_DRIVER = webdriver.Remote
-# WEB_DRIVER = webdriver.Firefox
-# WEB_DRIVER = webdriver.PhantomJS
+WEB_DRIVER = getattr(
+    webdriver, getattr(settings, 'SELENIUM_DRIVER', 'Firefox'))
 
 
 def MyWebDriver(base, **kwargs):
