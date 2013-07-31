@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import inspect
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
@@ -170,12 +171,24 @@ class SeleniumTestCase(LiveServerTestCase):
         self.page.get("%s%s" % (self.live_server_url, url))
 
     def get_page(self):
-        if issubclass(self.pageClass, webdriver.Remote):
-            return self.pageClass(
-                desired_capabilities={'browserName': 'firefox'},
-                command_executor='http://%s/wd/hub' % getattr(settings,
-                    "SELENIUM_HOST", "127.0.0.1:4444"))
-        return self.pageClass
+        """
+        :rtype: selenium.webdriver.Remote
+        """
+
+        kw = dict()
+
+        args = inspect.getargspec(self.pageClass.__init__).args
+
+        if 'command_executor' in args:
+            kw['command_executor'] = 'http://%s/wd/hub' % getattr(
+                settings, "SELENIUM_HOST", "127.0.0.1:4444")
+
+        arg_cap_name = 'capabilities'
+        if 'desired_capabilities' in args:
+            arg_cap_name = 'desired_' + arg_cap_name
+        kw[arg_cap_name] = getattr(settings, "SELENIUM_CAPABILITIES", {})
+
+        return self.pageClass(**kw)
 
     def setUp(self):
         self.page = self.get_page()
@@ -202,3 +215,11 @@ class SeleniumTestCase(LiveServerTestCase):
 
         if then:
             self.open(then)
+
+    def assertPopupContains(self, text):
+        """Switch to popup, assert it contains at least a part
+        of the text, close the popup. Error otherwise.
+        """
+        alert = self.page.switch_to_alert()
+        self.assertIn(text, alert.text)
+        alert.accept()
