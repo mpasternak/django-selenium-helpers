@@ -130,6 +130,15 @@ class _MyWebDriver(object):
         WebDriverWait(self, 10).until(
             lambda driver: f(driver))
 
+    def wait_for_id(self, id, displayed=None):
+        def f(selenium):
+            element = selenium.find_element_by_id(id)
+            if displayed is not None:
+                return element.is_displayed() == displayed
+            return True
+
+        WebDriverWait(self, 10).until(
+            lambda driver: f(driver))
 
 def get_selected_option(field):
     """Returns first selected <option> tag from a <select> field
@@ -153,9 +162,11 @@ def select_option_by_text(field, value):
     """
 
     for el in field.find_elements_by_tag_name('option'):
-        if el.text == value:
+        if el.text() == value:
             el.click()
             return
+
+    raise Exception("Label %r not found in select %r" % (value, field))
 
 
 class SeleniumTestCase(LiveServerTestCase):
@@ -208,10 +219,14 @@ class SeleniumTestCase(LiveServerTestCase):
         self.page.find_element_by_css_selector('input[type="submit"]').click()
 
         try:
-            self.page.find_element_by_id("content-related")
+            if 'grappelli' in settings.INSTALLED_APPS:
+                self.page.wait_for_id("content-related")
+            else:
+                self.page.wait_for_id('content')
+
         except NoSuchElementException:
-            self.page.quit()
             raise Exception("Cannot login via admin")
+            self.page.quit()
 
         if then:
             self.open(then)
