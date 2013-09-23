@@ -46,6 +46,13 @@ class MyWebElement(WebElement):
         return self.parent.execute_script(
             '''return $(arguments[0]).children().get();''', self)
 
+    def trigger(self, arg):
+        """Same as $(elem).trigger()
+        """
+        return self.parent.execute_script(
+            '''return $(arguments[0]).trigger(arguments[1]).get();''',
+            self, arg)
+
     def jq_parent(self):
         """Same as $(elem).parent()
         """
