@@ -59,6 +59,17 @@ class MyWebElement(WebElement):
         return self.parent.execute_script(
             '''return $(arguments[0]).parent().get();''', self)[0]
 
+    def attr(self, name, value=None):
+        """Same as $(elem).attr()
+        """
+        if value is not None:
+            return self.parent.execute_script(
+                '''return $(arguments[0]).attr(arguments[1], arguments[2]);''',
+                self, name, value)
+
+        return self.parent.execute_script(
+            '''return $(arguments[0]).attr(arguments[1]);''', self, name)
+
     def val(self, arg=None):
         """Same as $(elem).val()
         """
