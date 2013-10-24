@@ -40,11 +40,12 @@ class MyWebElement(WebElement):
         else:
             return self.tag_name
 
-    def children(self):
+    def children(self, arg):
         """Same as $(elem).children()
         """
         return self.parent.execute_script(
-            '''return $(arguments[0]).children().get();''', self)
+            '''return $(arguments[0]).children(arguments[1]).get();''',
+            self, arg)
 
     def trigger(self, arg):
         """Same as $(elem).trigger()
