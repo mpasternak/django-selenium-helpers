@@ -40,7 +40,7 @@ class MyWebElement(WebElement):
         else:
             return self.tag_name
 
-    def children(self, arg):
+    def children(self, arg=None):
         """Same as $(elem).children()
         """
         return self.parent.execute_script(
