@@ -172,6 +172,7 @@ class _MyWebDriver(object):
 
     def login_via_admin(self, username, password, prefix):
         """Performs user authorisation via default Django admin interface."""
+        #from selenium.webdriver import Firefox
         self.get(prefix + reverse('admin:index'))
         self.find_element_by_id("id_username").send_keys(username)
         self.find_element_by_id("id_password").send_keys(password + Keys.RETURN)
