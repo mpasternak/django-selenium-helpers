@@ -1,13 +1,13 @@
 # -*- encoding: utf-8 -*-
-import inspect
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from django.conf import settings
 
-from django.test import LiveServerTestCase
 from django.conf import settings
+from django.test.testcases import LiveServerTestCase
 
 from selenium import webdriver
 from selenium.common.exceptions import InvalidSelectorException, NoSuchElementException
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -19,8 +19,10 @@ def MyWebDriver(base, **kwargs):
     return type('MyWebDriver', (_MyWebDriver, base), kwargs)
 
 
-def wd():
-    return MyWebDriver(WEB_DRIVER)
+def wd(base=None):
+    if base is None:
+        return MyWebDriver(WEB_DRIVER)
+    return MyWebDriver(base)
 
 
 class MyWebElement(WebElement):
@@ -65,7 +67,7 @@ class MyWebElement(WebElement):
         """
         if value is not None:
             return self.parent.execute_script(
-                '''return $(arguments[0]).attr(arguments[1], arguments[2]);''',
+                '''$(arguments[0]).attr(arguments[1], arguments[2]);''',
                 self, name, value)
 
         return self.parent.execute_script(
@@ -159,6 +161,37 @@ class _MyWebDriver(object):
         WebDriverWait(self, 10).until(
             lambda driver: f(driver))
 
+    def assertPopupContains(self, text, accept=True):
+        """Switch to popup, assert it contains at least a part
+        of the text, close the popup. Error otherwise.
+        """
+        alert = self.switch_to_alert()
+        self.assertIn(text, alert.text)
+        if accept:
+            alert.accept()
+
+    def login_via_admin(self, username, password, prefix):
+        """Performs user authorisation via default Django admin interface."""
+        self.get(prefix + reverse('admin:index'))
+        self.find_element_by_id("id_username").send_keys(username)
+        self.find_element_by_id("id_password").send_keys(password + Keys.RETURN)
+
+        try:
+            if 'grappelli' in settings.INSTALLED_APPS:
+                self.wait_for_id("content-related")
+            else:
+                self.wait_for_id('content')
+
+        except NoSuchElementException:
+            raise Exception("Cannot login via admin")
+
+        if "Please enter the correct" in self.page_source:
+            raise Exception("Cannot login via admin")
+
+    def logout_admin(self, prefix):
+        self.get(prefix + reverse("admin:logout"))
+
+
 def get_selected_option(field):
     """Returns first selected <option> tag from a <select> field
 
@@ -188,7 +221,7 @@ def select_option_by_text(field, value):
     raise Exception("Label %r not found in select %r" % (value, field))
 
 
-class SeleniumTestCase(LiveServerTestCase):
+class SeleniumTestCaseBase(LiveServerTestCase):
     """
     A base test case for Selenium, providing hepler methods for generating
     clients and logging in profiles.
@@ -200,60 +233,101 @@ class SeleniumTestCase(LiveServerTestCase):
     def open(self, url):
         self.page.get("%s%s" % (self.live_server_url, url))
 
-    def get_page(self):
+    def get_page(self, *args, **kw):
         """
         :rtype: selenium.webdriver.Remote
         """
+        for key, value in self.get_page_kwargs().items():
+            if key not in kw:
+                kw[key] = value
 
-        kw = dict()
+        return self.pageClass(*args, **kw)
 
-        args = inspect.getargspec(self.pageClass.__init__).args
+    def reload(self):
+        self.open(self.url)
 
-        if 'command_executor' in args:
-            kw['command_executor'] = 'http://%s/wd/hub' % getattr(
-                settings, "SELENIUM_HOST", "127.0.0.1:4444")
-
-        arg_cap_name = 'capabilities'
-        if 'desired_capabilities' in args:
-            arg_cap_name = 'desired_' + arg_cap_name
-        kw[arg_cap_name] = getattr(settings, "SELENIUM_CAPABILITIES", {})
-
-        return self.pageClass(**kw)
+    def login_via_admin(self, username, password, then=None):
+        self.page.login_via_admin(username, password, prefix=self.live_server_url)
+        if then:
+            self.open(then)
+            return
+        self.reload()
 
     def setUp(self):
         self.page = self.get_page()
         self.reload()
 
-    def reload(self):
-        self.open(self.url)
+
+class SeleniumTestCase(SeleniumTestCaseBase):
+    """One browser window PER test case"""
 
     def tearDown(self):
         self.page.quit()
 
-    def login_via_admin(self, username, password, then=None):
-        """Performs user authorisation via default Django admin interface."""
-        self.open(reverse('admin:index'))
-        self.page.find_element_by_id("id_username").send_keys(username)
-        self.page.find_element_by_id("id_password").send_keys(password)
-        self.page.find_element_by_css_selector('input[type="submit"]').click()
 
-        try:
-            if 'grappelli' in settings.INSTALLED_APPS:
-                self.page.wait_for_id("content-related")
-            else:
-                self.page.wait_for_id('content')
+class SeleniumAdminMixin:
+    userClass = User
+    username = 'test'
+    password = 'test'
+    email = 'foo@example.com'
+    create_user = True
 
-        except NoSuchElementException:
-            raise Exception("Cannot login via admin")
-            self.page.quit()
+    def _create_user(self):
+        self.userClass.objects.create_superuser(
+            username=self.username,
+            password=self.password,
+            email=self.email)
 
-        if then:
-            self.open(then)
+    def login(self):
+        if self.create_user:
+            self._create_user()
+        self.login_via_admin(self.username, self.password, then=self.url)
 
-    def assertPopupContains(self, text):
-        """Switch to popup, assert it contains at least a part
-        of the text, close the popup. Error otherwise.
-        """
-        alert = self.page.switch_to_alert()
-        self.assertIn(text, alert.text)
-        alert.accept()
+
+class SeleniumAdminTestCase(SeleniumAdminMixin, SeleniumTestCaseBase):
+    def setUp(self):
+        self.page = self.get_page()
+        self.login()
+
+
+_global_page = None
+
+
+def get_global_page(pageClass, *args, **kw):
+    global _global_page
+    if _global_page is None:
+        _global_page = pageClass(*args, **kw)
+    else:
+        for key, value in kw.items():
+            if key not in ['desired_capabilities']:
+                setattr(_global_page, key, value)
+    return _global_page
+
+
+def quit_global_page():
+    global _global_page
+    _global_page.quit()
+    _global_page = None
+
+
+class SeleniumGlobalBrowserTestCase(SeleniumTestCaseBase):
+    def get_page(self, *args, **kw):
+        for key, value in self.get_page_kwargs().items():
+            if key not in kw:
+                kw[key] = value
+
+        return get_global_page(self.pageClass, *args, **kw)
+
+
+class SeleniumAdminGlobalBrowserTestCase(SeleniumAdminMixin,
+                                         SeleniumGlobalBrowserTestCase):
+    logout_on_teardown = True
+
+    def setUp(self):
+        self.page = self.get_page()
+        self.login()
+
+
+    def tearDown(self):
+        if self.logout_on_teardown:
+            self.page.logout_admin(self.live_server_url)
