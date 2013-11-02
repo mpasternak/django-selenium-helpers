@@ -51,6 +51,18 @@ class MyWebElement(WebElement):
             '''return $(arguments[0]).children(arguments[1]).get();''',
             self, arg)
 
+    def prop(self, arg, value=None):
+        """Same as $(elem).prop()
+        """
+        if value is None:
+            return self.parent.execute_script(
+                '''return $(arguments[0]).prop(arguments[1]);''',
+                self, arg)
+
+        return self.parent.execute_script(
+            '''return $(arguments[0]).prop(arguments[1], arguments[2]);''',
+            self, arg, value)
+
     def trigger(self, arg):
         """Same as $(elem).trigger()
         """
