@@ -9,11 +9,13 @@ from selenium import webdriver
 from selenium.common.exceptions import InvalidSelectorException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
 WEB_DRIVER = getattr(
     webdriver, getattr(settings, 'SELENIUM_DRIVER', 'Firefox'))
 
+TIMEOUT = 10
 
 def MyWebDriver(base, **kwargs):
     return type('MyWebDriver', (_MyWebDriver, base), kwargs)
@@ -130,6 +132,12 @@ class _MyWebDriver(object):
     def create_web_element(self, element_id):
         return MyWebElement(self, element_id)
 
+    def ready_state(self):
+        return self.execute_script("return document.readyState;")
+
+    def wait_for_reload(self):
+        WebDriverWait(self, TIMEOUT).until(lambda x: self.ready_state() == "complete")
+
     def find_elements_by_jquery(self, jq):
         return self.execute_script('''return $('%s').get();''' % jq)
 
@@ -148,7 +156,7 @@ class _MyWebDriver(object):
                 return element.is_displayed() == displayed
             return True
 
-        WebDriverWait(self, 10).until(
+        WebDriverWait(self, TIMEOUT).until(
             lambda driver: f(driver))
 
     def wait_for_id(self, id, displayed=None):
@@ -158,7 +166,7 @@ class _MyWebDriver(object):
                 return element.is_displayed() == displayed
             return True
 
-        WebDriverWait(self, 10).until(
+        WebDriverWait(self, TIMEOUT).until(
             lambda driver: f(driver))
 
     def assertPopupContains(self, text, accept=True):
@@ -193,35 +201,6 @@ class _MyWebDriver(object):
         self.get(prefix + reverse("admin:logout"))
 
 
-def get_selected_option(field):
-    """Returns first selected <option> tag from a <select> field
-
-    :param field:
-    :ptype field: selenium.webdriver.remote.WebElement
-    """
-
-    for element in field.find_elements_by_tag_name('option'):
-        if element.is_selected():
-            return element
-
-
-def select_option_by_text(field, value):
-    """Selects an option from a <select> field basing on its text value,
-    <option value="something">THE VALUE PASSED TO THIS FUNCTION</option>
-
-    :param field: SELECT tag
-    :param value: value, that should be set
-    :ptype value: str
-    """
-
-    for el in field.find_elements_by_tag_name('option'):
-        if el.text() == value:
-            el.click()
-            return
-
-    raise Exception("Label %r not found in select %r" % (value, field))
-
-
 class SeleniumTestCaseBase(LiveServerTestCase):
     """
     A base test case for Selenium, providing hepler methods for generating
@@ -233,6 +212,7 @@ class SeleniumTestCaseBase(LiveServerTestCase):
 
     def open(self, url):
         self.page.get("%s%s" % (self.live_server_url, url))
+        self.page.wait_for_reload()
 
     def get_page(self, *args, **kw):
         """
