@@ -15,7 +15,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 WEB_DRIVER = getattr(
     webdriver, getattr(settings, 'SELENIUM_DRIVER', 'Firefox'))
 
-TIMEOUT = 10
+TIMEOUT = 5000
 
 def MyWebDriver(base, **kwargs):
     return type('MyWebDriver', (_MyWebDriver, base), kwargs)
