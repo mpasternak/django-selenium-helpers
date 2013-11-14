@@ -7,13 +7,14 @@ from django.test.testcases import LiveServerTestCase
 
 from selenium import webdriver
 from selenium.common.exceptions import InvalidSelectorException, NoSuchElementException
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
-WEB_DRIVER = getattr(
-    webdriver, getattr(settings, 'SELENIUM_DRIVER', 'Firefox'))
+SELENIUM_DRIVER = getattr(settings, 'SELENIUM_DRIVER', 'Firefox')
+WEB_DRIVER = getattr(webdriver, SELENIUM_DRIVER)
 
 TIMEOUT = 5000
 
@@ -50,6 +51,11 @@ class MyWebElement(WebElement):
         return self.parent.execute_script(
             '''return $(arguments[0]).children(arguments[1]).get();''',
             self, arg)
+
+    def jq_parent(self):
+        return self.parent.execute_script(
+            '''return $(arguments[0]).parent();''',
+            self)
 
     def prop(self, arg, value=None):
         """Same as $(elem).prop()
@@ -226,8 +232,25 @@ class SeleniumTestCaseBase(LiveServerTestCase):
         self.page.get("%s%s" % (self.live_server_url, url))
         self.page.wait_for_reload()
 
-    def get_page_kwargs(self):
-        return {}
+    def get_page_kwargs(self, **kwargs):
+        ret = {}
+        if SELENIUM_DRIVER == "Remote":
+            ret.update({
+                'desired_capabilities': getattr(
+                    DesiredCapabilities,
+                    getattr(
+                        settings, "SELENIUM_DESIRED_CAPABILITIES", "FIREFOX")),
+                'command_executor': getattr(
+                    settings,
+                    "SELENIUM_COMMAND_EXECUTOR",
+                    "http://127.0.0.1:4444/wd/hub/"
+                )
+            })
+
+        if kwargs:
+            ret.update(kwargs)
+
+        return ret
 
     def get_page(self, *args, **kw):
         """
