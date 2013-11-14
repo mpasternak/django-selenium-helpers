@@ -226,6 +226,9 @@ class SeleniumTestCaseBase(LiveServerTestCase):
         self.page.get("%s%s" % (self.live_server_url, url))
         self.page.wait_for_reload()
 
+    def get_page_kwargs(self):
+        return {}
+
     def get_page(self, *args, **kw):
         """
         :rtype: selenium.webdriver.Remote
