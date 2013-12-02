@@ -192,7 +192,8 @@ class _MyWebDriver(object):
         of the text, close the popup. Error otherwise.
         """
         alert = self.switch_to_alert()
-        self.assertIn(text, alert.text)
+        if text not in alert.text:
+            raise AssertionError("%r not found in %r" % (text, alert.text))
         if accept:
             alert.accept()
 
