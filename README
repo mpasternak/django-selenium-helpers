@@ -1,3 +1,12 @@
+LEGACY CODE AHEAD
+-----------------
+
+*Don't use for new projects!* Use Splinter <https://splinter.readthedocs.org/en/latest/> instead. 
+
+
+About
+-----
+
 django-selenium-helpers is a small but powerful package, inspired by a `very interesting blog post <https://blogs.gnome.org/danni/2012/11/19/extending-selenium-with-jquery/>`_. It makes testing your `Django <http://djangoproject.com>`_-powered pages with `Selenium <http://seleniumhq.com>`_, that utilize `JQuery <http://jquery.com/>`_ a breeze by providing a set of powerful functions to use 
 
 Code sample
